@@ -1,21 +1,28 @@
 package com.example.supplierstock.ui.screens.stock_list
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.supplierstock.R
 import com.example.supplierstock.SupplierStockScreenRoutes
-import com.example.supplierstock.data.entities.Product
+import com.example.supplierstock.data.entities.ProductEntity
 
 
 @Composable
@@ -23,16 +30,36 @@ fun SupplierStockScreen(
     viewModel: StockListViewModel = viewModel(),
     navController: NavHostController
 ) {
-    LazyColumn {
-        items(viewModel.products) { product ->
-            ProductItem(product = product, navController)
+    Column(
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        LazyColumn {
+            items(viewModel.products) { product ->
+                ProductItem(product = product, navController)
+            }
+
+        }
+        IconButton(onClick = { goToAddNewProductScreen(navController) }) {
+            Icon(
+                painter = painterResource(R.drawable.baseline_add_24),
+                modifier = Modifier.size(100.dp),
+                contentDescription = "Add"
+            )
         }
     }
 }
 
+fun goToAddNewProductScreen(navController: NavHostController) {
+    navController.navigate(SupplierStockScreenRoutes.AddProductScreen.name)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductItem(product: Product, navController: NavHostController) {
+fun ProductItem(product: ProductEntity, navController: NavHostController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()

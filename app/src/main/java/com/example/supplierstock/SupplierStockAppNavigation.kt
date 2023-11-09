@@ -25,6 +25,9 @@ fun SupplierStockAppNavigation() {
                 backStackEntry.arguments?.getString("productId")?.toInt() ?: return@composable
             ProductInfoScreen(productId = productId, navHostController = navController)
         }
+        composable(SupplierStockScreenRoutes.AddProductScreen.name) { backStackEntry ->
+            ProductInfoScreen(productId = null, navHostController = navController)
+        }
     }
 }
 

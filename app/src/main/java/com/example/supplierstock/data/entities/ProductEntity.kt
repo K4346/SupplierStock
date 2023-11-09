@@ -1,6 +1,6 @@
 package com.example.supplierstock.data.entities
 
-data class Product(
+data class ProductEntity(
     val id: Int,
     val name: String,
     val price: Double,
