@@ -1,5 +1,6 @@
 package com.example.supplierstock.ui.screens.stock_list
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,6 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,7 +19,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,7 +56,7 @@ fun SupplierStockScreen(
             Icon(
                 painter = painterResource(R.drawable.baseline_add_24),
                 modifier = Modifier.size(100.dp),
-                contentDescription = "Add"
+                contentDescription = stringResource(id = R.string.add)
             )
         }
     }
@@ -70,7 +75,6 @@ fun ProductItem(product: ProductEntity, navController: NavHostController) {
             .padding(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         onClick = {
-//            todo переместить
             navController.navigate("${SupplierStockScreenRoutes.ProductScreen.name}/${product.id}")
         }
     ) {

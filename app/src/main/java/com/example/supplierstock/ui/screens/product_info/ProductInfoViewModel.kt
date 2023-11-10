@@ -1,11 +1,13 @@
 package com.example.supplierstock.ui.screens.product_info
 
 import android.app.Application
+import androidx.activity.ComponentActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.supplierstock.data.entities.ProductEntity
 import com.example.supplierstock.data.repositories.StockRepositoryImpl
 import com.example.supplierstock.domain.repositories.StockRepository
+import com.example.supplierstock.domain.use_cases.ShareUseCase
 import com.example.supplierstock.domain.use_cases.ValidatorUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +21,7 @@ import kotlinx.coroutines.launch
 
 class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app) {
 
+    private var currentProduct: ProductEntity? = null
     private var productId: Int? = null
 
     private val _uiState = MutableStateFlow(ProductInfoUi())
@@ -76,8 +79,8 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
     fun initUiState(productId0: Int) {
         productId = productId0
         viewModelScope.launch(Dispatchers.IO) {
-            val product = stockRepository.getAllProductsFromBd(app).first { it.id == productId }
-            product.let {
+            currentProduct = stockRepository.getAllProductsFromBd(app).first { it.id == productId }
+            currentProduct?.let {
                 _uiState.value = ProductInfoUi(
                     name = it.name,
                     price = it.price.toString(),
@@ -164,11 +167,15 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
     }
 
     fun removeTheCurrentProduct() {
+        if (currentProduct == null) return
         viewModelScope.launch(Dispatchers.IO) {
-            val products = stockRepository.getAllProductsFromBd(app)
-            stockRepository.deleteProductInBd(app, products.first { it.id == productId })
+            stockRepository.deleteProductInBd(app, currentProduct!!)
         }
         _navigateToProductList.value = true
     }
-
+    fun shareData(activityContext: ComponentActivity?) {
+        if (currentProduct == null) return
+        val shareUseCase = ShareUseCase()
+        activityContext?.startActivity(shareUseCase.makeIntent(currentProduct!!, activityContext))
+    }
 }
