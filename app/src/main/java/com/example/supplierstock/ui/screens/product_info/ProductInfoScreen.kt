@@ -1,6 +1,5 @@
 package com.example.supplierstock.ui.screens.product_info
 
-import android.graphics.drawable.VectorDrawable
 import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,12 +10,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -32,17 +29,16 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.supplierstock.R
 import com.example.supplierstock.extensions.getActivity
 import com.example.supplierstock.ui.composable.ProductInfoBasicTextField
-import com.example.supplierstock.ui.screens.stock_list.goToAddNewProductScreen
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -106,6 +102,7 @@ fun ProductInfoScreen(
         ) {
             Text(
                 text = stringResource(R.string.list_product),
+                fontSize = 32.sp,
                 modifier = Modifier.padding(8.dp)
             )
             ProductInfoBasicTextField(
@@ -173,7 +170,7 @@ fun ProductInfoScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp)
+                        .padding(12.dp)
                         .padding(horizontal = 8.dp)
                 ) {
                     Text(text = stringResource(R.string.remove))
@@ -183,7 +180,7 @@ fun ProductInfoScreen(
                 val activityContext = LocalContext.current.getActivity()
                 Button(onClick = { viewModel.shareData(activityContext) }) {
                     Icon(
-                        imageVector  = Icons.Filled.Share,
+                        imageVector = Icons.Filled.Share,
                         modifier = Modifier.size(16.dp),
                         contentDescription = stringResource(id = R.string.share)
                     )
