@@ -1,4 +1,4 @@
-package com.example.supplierstock.domain
+package com.example.supplierstock.domain.use_cases
 
 import android.util.Patterns
 

@@ -1,11 +1,13 @@
-package com.example.supplierstock.ui.product_info
+package com.example.supplierstock.ui.screens.product_info
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.supplierstock.data.ProductDatabase
 import com.example.supplierstock.data.entities.ProductEntity
-import com.example.supplierstock.domain.ValidatorUseCase
+import com.example.supplierstock.data.repositories.StockRepositoryImpl
+import com.example.supplierstock.domain.repositories.StockRepository
+import com.example.supplierstock.domain.use_cases.ValidatorUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,19 +17,18 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class ProductInfoViewModel(application: Application) : AndroidViewModel(application) {
-    //    todo потом придется убрать/изменить с добавлением рум, сейчас не оч выглядит
-    var productId: Int? = null
+class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app) {
+
+    private var productId: Int? = null
 
     private val _uiState = MutableStateFlow(ProductInfoUi())
     val uiState: StateFlow<ProductInfoUi> = _uiState.asStateFlow()
 
-    val _errorSF: MutableSharedFlow<String?> = MutableSharedFlow()
+    private val _errorSF: MutableSharedFlow<String?> = MutableSharedFlow()
     val errorSF: SharedFlow<String?> = _errorSF.asSharedFlow()
     var showError = false
 
-    //    todo remove, provide db by di
-    private val _products: MutableList<ProductEntity> = ProductDatabase.list
+    private val stockRepository: StockRepository = StockRepositoryImpl()
 
     private val _navigateToProductList = MutableStateFlow(false)
     val navigateToProductList: Flow<Boolean>
@@ -58,39 +59,40 @@ class ProductInfoViewModel(application: Application) : AndroidViewModel(applicat
         _uiState.value = _uiState.value.copy(phone = newValue)
     }
 
-    private fun getId() = _products.maxOf { it.id } + 1
-
-    //    todo делать запрос в бд в ассинхроне, получить ответ и в любом случае вернуться на прошлый экран
-
-    fun addProductAndReturnBack(newProduct: ProductEntity) {
-        _products.add(newProduct)
+    private fun addProductAndReturnBack(newProduct: ProductEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            stockRepository.insertProductInBd(app, newProduct)
+        }
         _navigateToProductList.value = true
     }
 
     fun editProductAndReturnBack(newProduct: ProductEntity) {
-        _products[productId!!] = newProduct
+        viewModelScope.launch(Dispatchers.IO) {
+            stockRepository.updateProductInBd(app, newProduct)
+        }
         _navigateToProductList.value = true
     }
 
-    fun initUiState(productId_: Int) {
-        productId = productId_
-        val product = _products.first { it.id == productId }
-        product.let {
-            _uiState.value = ProductInfoUi(
-                name = it.name,
-                price = it.price.toString(),
-                quantity = it.quantity.toString(),
-                supplier = it.supplier,
-                email = it.email,
-                phone = it.phone
-            )
+    fun initUiState(productId0: Int) {
+        productId = productId0
+        viewModelScope.launch(Dispatchers.IO) {
+            val product = stockRepository.getAllProductsFromBd(app).first { it.id == productId }
+            product.let {
+                _uiState.value = ProductInfoUi(
+                    name = it.name,
+                    price = it.price.toString(),
+                    quantity = it.quantity.toString(),
+                    supplier = it.supplier,
+                    email = it.email,
+                    phone = it.phone
+                )
+            }
         }
-
     }
 
     private fun makeProduct(currentProductId: Int?): ProductEntity {
         return ProductEntity(
-            id = currentProductId ?: getId(),
+            id = currentProductId,
             name = uiState.value.name,
             price = uiState.value.price.toDoubleOrNull() ?: 0.0,
             quantity = uiState.value.quantity.toIntOrNull() ?: 0,
@@ -161,8 +163,11 @@ class ProductInfoViewModel(application: Application) : AndroidViewModel(applicat
         return true
     }
 
-    fun removeProduct() {
-        _products.remove(_products.first { it.id==productId })
+    fun removeTheCurrentProduct() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val products = stockRepository.getAllProductsFromBd(app)
+            stockRepository.deleteProductInBd(app, products.first { it.id == productId })
+        }
         _navigateToProductList.value = true
     }
 

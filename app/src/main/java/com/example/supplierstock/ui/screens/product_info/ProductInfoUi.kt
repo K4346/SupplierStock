@@ -1,4 +1,4 @@
-package com.example.supplierstock.ui.product_info
+package com.example.supplierstock.ui.screens.product_info
 
 data class ProductInfoUi(
     val name: String = "",

@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.supplierstock.ui.product_info.ProductInfoScreen
+import com.example.supplierstock.ui.screens.product_info.ProductInfoScreen
 import com.example.supplierstock.ui.screens.stock_list.SupplierStockScreen
 
 
@@ -32,7 +32,5 @@ fun SupplierStockAppNavigation() {
 }
 
 enum class SupplierStockScreenRoutes {
-    StockListScreen,
-    ProductScreen,
-    AddProductScreen
+    StockListScreen, ProductScreen, AddProductScreen
 }

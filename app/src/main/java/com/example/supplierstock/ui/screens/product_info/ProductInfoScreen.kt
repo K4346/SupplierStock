@@ -1,4 +1,4 @@
-package com.example.supplierstock.ui.product_info
+package com.example.supplierstock.ui.screens.product_info
 
 import android.util.Log
 import androidx.compose.foundation.layout.Column
@@ -158,7 +158,7 @@ fun ProductInfoScreen(
             if (productId != null) {
                 Button(
                     onClick = {
-                        viewModel.removeProduct()
+                        viewModel.removeTheCurrentProduct()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
