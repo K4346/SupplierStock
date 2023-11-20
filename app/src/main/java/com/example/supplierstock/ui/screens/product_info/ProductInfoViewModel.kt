@@ -1,14 +1,18 @@
 package com.example.supplierstock.ui.screens.product_info
 
 import android.app.Application
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.supplierstock.data.SettingsManager
+import com.example.supplierstock.data.entities.DataSource
 import com.example.supplierstock.data.entities.ProductEntity
 import com.example.supplierstock.data.repositories.StockRepositoryImpl
 import com.example.supplierstock.domain.repositories.StockRepository
 import com.example.supplierstock.domain.use_cases.ShareUseCase
 import com.example.supplierstock.domain.use_cases.ValidatorUseCase
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,8 +28,8 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
     private var currentProduct: ProductEntity? = null
     private var productId: Int? = null
 
-    private val _uiState = MutableStateFlow(ProductInfoUi())
-    val uiState: StateFlow<ProductInfoUi> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(getTemplateUiState())
+    val uiState: StateFlow<ProductInfoUiState> = _uiState.asStateFlow()
 
     private val _errorSF: MutableSharedFlow<String?> = MutableSharedFlow()
     val errorSF: SharedFlow<String?> = _errorSF.asSharedFlow()
@@ -76,24 +80,50 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
         _navigateToProductList.value = true
     }
 
+    private fun getTemplateUiState(): ProductInfoUiState {
+        return if (SettingsManager.useDefaultValues) {
+            ProductInfoUiState(
+                name = "",
+                price = "",
+                quantity = "",
+                supplier = SettingsManager.defaultSupplierName,
+                email = SettingsManager.defaultEmail,
+                phone = SettingsManager.defaultPhone,
+                dataSource = DataSource.Manual.name
+            )
+        } else {
+            ProductInfoUiState(
+                name = "",
+                price = "",
+                quantity = "",
+                supplier = "",
+                email = "",
+                phone = "",
+                dataSource = DataSource.Manual.name
+            )
+        }
+    }
+
     fun initUiState(productId0: Int) {
         productId = productId0
         viewModelScope.launch(Dispatchers.IO) {
             currentProduct = stockRepository.getAllProductsFromBd(app).first { it.id == productId }
             currentProduct?.let {
-                _uiState.value = ProductInfoUi(
+                Log.i("kpop", Gson().toJson(it))
+                _uiState.value = ProductInfoUiState(
                     name = it.name,
                     price = it.price.toString(),
                     quantity = it.quantity.toString(),
                     supplier = it.supplier,
                     email = it.email,
-                    phone = it.phone
+                    phone = it.phone,
+                    dataSource = it.dataSource.name
                 )
             }
         }
     }
 
-    private fun makeProduct(currentProductId: Int?): ProductEntity {
+    private fun makeProduct(currentProductId: Int?, dataSource: DataSource): ProductEntity {
         return ProductEntity(
             id = currentProductId,
             name = uiState.value.name,
@@ -101,18 +131,23 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
             quantity = uiState.value.quantity.toIntOrNull() ?: 0,
             supplier = uiState.value.supplier,
             email = uiState.value.email,
-            phone = uiState.value.phone
+            phone = uiState.value.phone,
+            dataSource = dataSource
         )
     }
 
     fun processProduct() {
-        val productEntity = makeProduct(productId)
+        val productEntity =
+            makeProduct(currentProductId = productId, dataSource = DataSource.Manual)
         if (productId == null) {
             addProductAndReturnBack(productEntity)
         } else {
             editProductAndReturnBack(productEntity)
         }
     }
+
+    fun makeProductForEncryptToFile() =
+        makeProduct(currentProductId = productId, dataSource = DataSource.File)
 
     fun fieldsAreFine(): Boolean {
         val productNameRes = validatorUseCase.validateProductName(uiState.value.name)
@@ -173,9 +208,16 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
         }
         _navigateToProductList.value = true
     }
+
     fun shareData(activityContext: ComponentActivity?) {
         if (currentProduct == null) return
         val shareUseCase = ShareUseCase()
         activityContext?.startActivity(shareUseCase.makeIntent(currentProduct!!, activityContext))
     }
+
+    fun getFlagHideSensitiveData() = SettingsManager.hideSensitiveData
+
+    fun getFlagDisableDataSharing() = SettingsManager.disableDataSharing
+
+
 }

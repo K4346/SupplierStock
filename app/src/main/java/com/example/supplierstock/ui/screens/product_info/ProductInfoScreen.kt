@@ -1,6 +1,9 @@
 package com.example.supplierstock.ui.screens.product_info
 
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +23,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,16 +33,19 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.supplierstock.R
+import com.example.supplierstock.data.SettingsManager
 import com.example.supplierstock.extensions.getActivity
-import com.example.supplierstock.ui.composable.ProductInfoBasicTextField
+import com.example.supplierstock.ui.composable.BasicTextField
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -67,6 +74,8 @@ fun ProductInfoScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val activityContext = LocalContext.current.getActivity()
+
     LaunchedEffect(UInt) {
         viewModel.errorSF.collect { error ->
             if (!viewModel.showError || error == null) return@collect
@@ -85,9 +94,63 @@ fun ProductInfoScreen(
                 }
             }
         }
-
     }
+    val saveEncryptedFileResultLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument()
+        ) { uri ->
+            if (uri == null || activityContext == null) return@rememberLauncherForActivityResult
+            val product = viewModel.makeProductForEncryptToFile()
+            SettingsManager.saveToFile(
+                activityContext,
+                product,
+                uri
+            )
+        }
+    val loadEncryptedFileResultLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (uri == null || activityContext == null) return@rememberLauncherForActivityResult
+            SettingsManager.getProductFromEncryptedFile(
+                activityContext,
+                uri
+            )
+        }
+//    todo разделить функционал на 2 экрана
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(text = stringResource(id = R.string.list_product)) },
+                actions = {
+                    if (productId == null) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_save),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .clickable {
+                                    keyboardController?.hide()
+                                    keyboardController?.hide()
+                                    loadEncryptedFileResultLauncher.launch(arrayOf("application/json"))
+                                }
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_upload),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .clickable {
+                                    keyboardController?.hide()
+                                    if (!viewModel.fieldsAreFine()) return@clickable
+                                    saveEncryptedFileResultLauncher.launch(SettingsManager.encrypted_product_name)
+                                }
+                        )
+                    }
+                }
+            )
+        },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         }
@@ -100,51 +163,45 @@ fun ProductInfoScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = stringResource(R.string.list_product),
-                fontSize = 32.sp,
-                modifier = Modifier.padding(8.dp)
-            )
-            ProductInfoBasicTextField(
+            BasicTextField(
                 value = uiState.name,
                 onValueChange = { viewModel.onNameChange(it) },
                 stringResource(R.string.product_name),
-                Modifier.padding(contentPadding)
             )
-            ProductInfoBasicTextField(
+            BasicTextField(
                 value = uiState.price,
                 onValueChange = { viewModel.onPriceChange(it) },
                 stringResource(R.string.price),
-                Modifier.padding(contentPadding),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-            ProductInfoBasicTextField(
+            BasicTextField(
                 value = uiState.quantity,
                 onValueChange = { viewModel.onQuantityChange(it) },
                 stringResource(R.string.quantity),
-                Modifier.padding(contentPadding),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
-            ProductInfoBasicTextField(
+            BasicTextField(
                 value = uiState.supplier,
                 onValueChange = { viewModel.onSupplierChange(it) },
                 stringResource(R.string.supplier),
-                Modifier.padding(contentPadding)
             )
-            ProductInfoBasicTextField(
+            BasicTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.onEmailChange(it) },
                 stringResource(R.string.email),
-                Modifier.padding(contentPadding),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                visualTransformation = if (!viewModel.getFlagHideSensitiveData()) VisualTransformation.None else PasswordVisualTransformation()
             )
-            ProductInfoBasicTextField(
+            BasicTextField(
                 value = uiState.phone,
                 onValueChange = { viewModel.onPhoneChange(it) },
                 stringResource(R.string.phone),
-                Modifier.padding(contentPadding),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                visualTransformation = if (!viewModel.getFlagHideSensitiveData()) VisualTransformation.None else PasswordVisualTransformation()
             )
+            if (productId != null) {
+                Text("${stringResource(R.string.data_source)}: ${uiState.dataSource} ")
+            }
 
             Button(
                 onClick = {
@@ -177,8 +234,9 @@ fun ProductInfoScreen(
                 }
             }
             if (productId != null) {
-                val activityContext = LocalContext.current.getActivity()
-                Button(onClick = { viewModel.shareData(activityContext) }) {
+
+                Button(enabled = !viewModel.getFlagDisableDataSharing(),
+                    onClick = { viewModel.shareData(activityContext) }) {
                     Icon(
                         imageVector = Icons.Filled.Share,
                         modifier = Modifier.size(16.dp),
@@ -188,5 +246,4 @@ fun ProductInfoScreen(
             }
         }
     }
-
 }

@@ -11,4 +11,14 @@
     <string name="list_product">Список закупок</string>
     <string name="remove">Удалить</string>
     <string name="share">Поделиться</string>
+    <string name="settings">Настройки</string>
+    <string name="default_supplier_name">Имя поставщик по умолчанию</string>
+    <string name="default_phone">Номер телефона по умолчанию</string>
+    <string name="default_email">Почта по умолчанию</string>
+    <string name="stock">Закупки</string>
+    <string name="use_default_values">Использовать шаблон по умолчанию</string>
+    <string name="hide_sensitive_data">Скрыть чувствительную информацию</string>
+    <string name="disable_data_sending">Запретить делиться информацией</string>
+    <string name="data_source">Источник данных</string>
+    <string name="save_to_file">Сохранить в файл</string>
 </resources>

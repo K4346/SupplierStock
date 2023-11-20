@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.supplierstock.ui.screens.product_info.ProductInfoScreen
+import com.example.supplierstock.ui.screens.settings.SettingsScreen
 import com.example.supplierstock.ui.screens.stock_list.SupplierStockScreen
 
 
@@ -25,12 +26,15 @@ fun SupplierStockAppNavigation() {
                 backStackEntry.arguments?.getString("productId")?.toInt() ?: return@composable
             ProductInfoScreen(productId = productId, navHostController = navController)
         }
-        composable(SupplierStockScreenRoutes.AddProductScreen.name) { backStackEntry ->
+        composable(SupplierStockScreenRoutes.AddProductScreen.name) {
             ProductInfoScreen(productId = null, navHostController = navController)
+        }
+        composable(SupplierStockScreenRoutes.SettingsScreen.name) {
+            SettingsScreen(navHostController = navController)
         }
     }
 }
 
 enum class SupplierStockScreenRoutes {
-    StockListScreen, ProductScreen, AddProductScreen
+    StockListScreen, ProductScreen, AddProductScreen, SettingsScreen
 }
