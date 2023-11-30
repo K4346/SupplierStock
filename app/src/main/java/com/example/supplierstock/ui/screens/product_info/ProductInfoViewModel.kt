@@ -123,7 +123,7 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
         }
     }
 
-    private fun makeProduct(currentProductId: Int?, dataSource: DataSource): ProductEntity {
+    fun makeProduct(currentProductId: Int? = null): ProductEntity {
         return ProductEntity(
             id = currentProductId,
             name = uiState.value.name,
@@ -132,13 +132,13 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
             supplier = uiState.value.supplier,
             email = uiState.value.email,
             phone = uiState.value.phone,
-            dataSource = dataSource
+            dataSource = DataSource.valueOf(uiState.value.dataSource)
         )
     }
 
     fun processProduct() {
         val productEntity =
-            makeProduct(currentProductId = productId, dataSource = DataSource.Manual)
+            makeProduct(currentProductId = productId)
         if (productId == null) {
             addProductAndReturnBack(productEntity)
         } else {
@@ -147,7 +147,9 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
     }
 
     fun makeProductForEncryptToFile() =
-        makeProduct(currentProductId = productId, dataSource = DataSource.File)
+        makeProduct(currentProductId = productId).apply {
+            dataSource = DataSource.File
+        }
 
     fun fieldsAreFine(): Boolean {
         val productNameRes = validatorUseCase.validateProductName(uiState.value.name)
@@ -218,6 +220,17 @@ class ProductInfoViewModel(private val app: Application) : AndroidViewModel(app)
     fun getFlagHideSensitiveData() = SettingsManager.hideSensitiveData
 
     fun getFlagDisableDataSharing() = SettingsManager.disableDataSharing
+    fun deserializeProduct(product: ProductEntity) {
+        _uiState.value = ProductInfoUiState(
+            name = product.name,
+            price = product.price.toString(),
+            quantity = product.quantity.toString(),
+            supplier = product.supplier,
+            email = product.email,
+            phone = product.phone,
+            dataSource = product.dataSource.name
+        )
+    }
 
 
 }

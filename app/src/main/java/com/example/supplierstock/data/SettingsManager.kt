@@ -12,123 +12,99 @@ import androidx.security.crypto.MasterKey
 import com.example.supplierstock.data.entities.ProductEntity
 import com.google.gson.Gson
 import java.io.File
-import java.nio.charset.StandardCharsets
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 
 // todo реализовать репозиторий / лучше добавить хилт
 object SettingsManager {
 
-    private lateinit var app: Application
 
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var masterKey: MasterKey
 
     const val encrypted_product_name = "encrypted_product_data.json"
 
-    fun initialize(context: Application) {
-        app = context
+    const val TEMP_FILE_NAME = "temp_file.json"
+
+    fun lazyTempFile(context: Context): File {
+        val tempFile = File(context.cacheDir, TEMP_FILE_NAME)
+        if (tempFile.exists()) tempFile.delete()
+        return tempFile
+    }
+
+    fun initialize(app: Application) {
         masterKey = MasterKey.Builder(app, MasterKey.DEFAULT_MASTER_KEY_ALIAS)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
         sharedPreferences = EncryptedSharedPreferences.create(
-            context,
+            app,
             SETTINGS_PREF_NAME,
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
+
     }
 
     //todo убрать заглушки
     fun saveToFile(context: Context, productData: ProductEntity, uriPath: Uri) {
-        val contentResolver = context.contentResolver
-        val inputStream = contentResolver.openInputStream(uriPath)
+        val tempFile = lazyTempFile(context)
+        val encryptedFile = EncryptedFile.Builder(
+            context,
+            tempFile,
+            masterKey,
+            EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+        ).build()
 
-        if (inputStream != null) {
-
-            val tempFile = File(context.cacheDir, "temp_file.json")
-
-
-            tempFile.outputStream().use { outputStream ->
-                inputStream.copyTo(outputStream)
-            }
-
-
-            val encryptedFile = EncryptedFile.Builder(
-                context,
-                tempFile,
-                masterKey,
-                EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-            ).build()
-
-            tempFile.delete()
-
+        encryptedFile.openFileOutput().apply {
             val jsonProduct = Gson().toJson(productData)
-            encryptedFile.openFileOutput().use { outputStream ->
-                outputStream.write(jsonProduct.toByteArray(StandardCharsets.UTF_8))
-                outputStream.flush()
-            }
-
-            encryptedFile.openFileInput().use {
-                val jsonString = String(it.readBytes())
-
-                val gson = Gson()
-                val product = gson.fromJson(jsonString, ProductEntity::class.java)
-                Log.i("kpoper", product.toString())
-                Toast.makeText(context, "${uriPath.path} $product", Toast.LENGTH_LONG).show()
-            }
-            //  getProductFromEncryptedFile(context, uriPath)
+            write(jsonProduct.toByteArray())
+            close()
         }
+
+        context.contentResolver.openFileDescriptor(uriPath, "w")?.use { descriptor ->
+            FileOutputStream(descriptor.fileDescriptor).use { output ->
+                tempFile.inputStream().use { input ->
+                    input.copyTo(output)
+                    input.close()
+                }
+                output.close()
+            }
+        }
+        tempFile.delete()
     }
 
 
-    fun getProductFromEncryptedFile(context: Context, uriPath: Uri) {
-//        val contentResolver = context.contentResolver
-//        val inputStream = contentResolver.openInputStream(uriPath)
-//
-//        if (inputStream != null) {
-//
-//            val tempFile = File(context.cacheDir, "temp_file.json")
-//
-//            // Копируйте данные из inputStream в tempFile
-//            tempFile.outputStream().use { outputStream ->
-//                inputStream.copyTo(outputStream)
-//            }
-//
-//
-////            val encryptedFile = EncryptedFile.Builder(
-////                context,
-////                tempFile,
-////                masterKey,
-////                EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-////            ).build()
-//
-//
-//            val fileContent = ByteArray(32000)
-//
-//            //The number of bytes actually read from the file.
-//            val numBytesRead: Int
-//
-//            //Open the file for reading, and read all the contents.
-//            //Note how Kotlin's 'use' function correctly closes the resource after we've finished,
-//            //regardless of whether or not an exception was thrown.
-//            encryptedFile.openFileInput().use {
-//                numBytesRead = it.read(fileContent)
-//                Log.i("kpoper", numBytesRead.toString())
-//            }
-//
-//            //return String(fileContent, 0, numBytesRead)
-//            return
-//            encryptedFile.openFileInput().use { inputStream_ ->
-//
-//                val jsonString = String(inputStream_.readBytes())
-//
-//                val gson = Gson()
-//                Log.i("kpoper", gson.fromJson(jsonString, ProductEntity::class.java).toString())
-//            }
-//            tempFile.delete()
-//        }
-        Toast.makeText(context, uriPath.path, Toast.LENGTH_SHORT).show()
+    fun getProductFromEncryptedFile(context: Context, uriPath: Uri): ProductEntity {
+        val tempFile = lazyTempFile(context)
+
+        tempFile.outputStream().use { output ->
+            context.contentResolver.openFileDescriptor(uriPath, "r")?.use { descriptor ->
+                FileInputStream(descriptor.fileDescriptor).use { input ->
+                    input.copyTo(output)
+                    input.close()
+                }
+            }
+            output.close()
+        }
+
+        val encryptedFile = EncryptedFile.Builder(
+            context,
+            tempFile,
+            masterKey,
+            EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+        ).build()
+        encryptedFile.openFileInput().use { input ->
+            val jsonString = String(input.readBytes())
+            val gson = Gson()
+            val product = gson.fromJson(jsonString, ProductEntity::class.java)
+            Log.i("kpoper", product.toString())
+            Toast.makeText(context, "${uriPath.path} $product", Toast.LENGTH_LONG).show()
+
+            tempFile.delete()
+            return product
+        }
     }
 
     //    has def value -> not null - !!
@@ -177,5 +153,4 @@ object SettingsManager {
     private const val USE_DEFAULT_VALUES_KEY = "use_default_values"
     private const val HIDE_SENSITIVE_DATA_KEY = "hide_sensitive_data"
     private const val DISABLE_DATA_SHARING_KEY = "disable_data_sharing"
-
 }

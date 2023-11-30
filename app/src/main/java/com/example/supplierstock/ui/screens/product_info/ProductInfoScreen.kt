@@ -112,10 +112,11 @@ fun ProductInfoScreen(
             contract = ActivityResultContracts.OpenDocument()
         ) { uri ->
             if (uri == null || activityContext == null) return@rememberLauncherForActivityResult
-            SettingsManager.getProductFromEncryptedFile(
+            val product = SettingsManager.getProductFromEncryptedFile(
                 activityContext,
                 uri
             )
+            viewModel.deserializeProduct(product)
         }
 //    todo разделить функционал на 2 экрана
     Scaffold(
@@ -234,7 +235,6 @@ fun ProductInfoScreen(
                 }
             }
             if (productId != null) {
-
                 Button(enabled = !viewModel.getFlagDisableDataSharing(),
                     onClick = { viewModel.shareData(activityContext) }) {
                     Icon(

@@ -17,7 +17,7 @@ data class ProductEntity(
     @ColumnInfo(name = "supplier") val supplier: String,
     @ColumnInfo(name = "email") val email: String,
     @ColumnInfo(name = "phone") val phone: String,
-    @ColumnInfo(name = "dataSource") val dataSource: DataSource,
+    @ColumnInfo(name = "dataSource") var dataSource: DataSource = DataSource.Manual,
 ) : Parcelable
 
 enum class DataSource {

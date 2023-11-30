@@ -51,23 +51,23 @@ fun SupplierStockScreen(
                 .fillMaxWidth()
                 .fillMaxHeight()
                 .padding(contentPadding)
-                .padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             val productsState =
                 viewModel.products.collectAsStateWithLifecycle(initialValue = emptyList())
-            LazyColumn {
-                items(productsState.value) { product ->
-                    ProductItem(product = product, navController)
-                }
-
-            }
             IconButton(onClick = { goToAddNewProductScreen(navController) }) {
                 Icon(
                     painter = painterResource(R.drawable.baseline_add_24),
                     modifier = Modifier.size(100.dp),
                     contentDescription = stringResource(id = R.string.add)
                 )
+            }
+            LazyColumn {
+                items(productsState.value) { product ->
+                    ProductItem(product = product, navController)
+                }
             }
         }
     }
