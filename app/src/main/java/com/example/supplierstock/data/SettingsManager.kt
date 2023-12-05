@@ -108,6 +108,11 @@ object SettingsManager {
     }
 
     //    has def value -> not null - !!
+    var passphraseString: String?
+        get() = sharedPreferences.getString(PREFS_KEY_PASSPHRASE, null)
+        set(passphrase) {
+            sharedPreferences.edit().putString(PREFS_KEY_PASSPHRASE, passphrase).apply()
+        }
     var defaultSupplierName: String
         get() = sharedPreferences.getString(DEFAULT_SUPPLIER_NAME_KEY, defaultSupplierNameValue)!!
         set(supplierName) {
@@ -153,4 +158,6 @@ object SettingsManager {
     private const val USE_DEFAULT_VALUES_KEY = "use_default_values"
     private const val HIDE_SENSITIVE_DATA_KEY = "hide_sensitive_data"
     private const val DISABLE_DATA_SHARING_KEY = "disable_data_sharing"
+
+    const val PREFS_KEY_PASSPHRASE = "PREFS_KEY_PASSPHRASE"
 }
