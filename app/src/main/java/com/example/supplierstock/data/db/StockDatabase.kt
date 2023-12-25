@@ -1,9 +1,11 @@
 package com.example.supplierstock.data.db
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.supplierstock.data.SQLCipherUtils
 import com.example.supplierstock.data.SettingsManager
 import com.example.supplierstock.data.entities.ProductEntity
 import net.sqlcipher.database.SupportFactory
@@ -35,6 +37,9 @@ abstract class StockDatabase : RoomDatabase() {
 
         private fun createDB(context: Context): StockDatabase {
             val passphrase = getPassphrase() ?: initializePassphrase(context)
+            if (SQLCipherUtils.getDatabaseState(context, DB_NAME)==SQLCipherUtils.State.UNENCRYPTED){
+                SQLCipherUtils.encrypt(context, DB_NAME,passphrase)
+            }
             val factory = SupportFactory(passphrase)
             return Room.databaseBuilder(
                 context.applicationContext,
